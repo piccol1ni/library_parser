@@ -17,21 +17,34 @@ def download_txt(url, filename, folder='books/'):
         file.write(response.content)
     return os.path.join(folder, filename)
 
+def download_img(url, folder='images/'):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'lxml')
+    response = requests.get(f"https://tululu.org{soup.find(class_='bookimage').find('img')['src']}")
+    os.makedirs(folder, exist_ok=True)
+    image_name = sanitize_filename(soup.find(class_='bookimage').find('img')['src'])
+    with open(f"{folder}{image_name}", 'wb') as file:
+        file.write(response.content)
+    return os.path.join(folder, image_name)
+
 
 def title_author_parser(id):
     response = requests.get(f'https://tululu.org/b{id}/')
+    response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
     title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
     book_title = title_and_author[0].strip()
-    return book_title
+    return f'{id}. {book_title}'
 
 
 def main():
     for id in range(1, 11):
         response = requests.get(f"https://tululu.org/txt.php?id={id}")
+        response.raise_for_status()
         try:
             check_for_redirect(response)
             download_txt(f"https://tululu.org/txt.php?id={id}", title_author_parser(id))
+            download_img(f'https://tululu.org/b{id}')
         except:
             pass
 

@@ -13,9 +13,7 @@ def check_genre(id):
     soup = BeautifulSoup(response.text, 'lxml')
     genres = soup.find('span', class_='d_book').text.split(':')
     genres = genres[1].strip().split(',')
-    for genre in genres:
-        if 'Научная фантастика' == genre.strip():
-            return True
+    return genres
 
 def download_txt(url, filename, folder='books/'):
     response = requests.get(url)
@@ -57,6 +55,21 @@ def title_author_parser(id):
     book_title = title_and_author[0].strip()
     return f'{id}. {book_title}'
 
+def parse_book_page(id):
+    response = requests.get(f'https://tululu.org/b{id}')
+    soup = BeautifulSoup(response.text, 'lxml')
+    title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
+    book_title = title_and_author[0].strip()
+    book_author = title_and_author[1].strip()
+    image_name = soup.find(class_='bookimage').find('img')['src']
+    book_info = {
+        'title': book_title,
+        'author': book_author,
+        'genres': check_genre(id),
+        'image': f"https://tululu.org{image_name}",
+    }
+    print(book_info)
+
 
 def main():
     for id in range(1, 11):
@@ -64,10 +77,11 @@ def main():
         response.raise_for_status()
         try:
             check_for_redirect(response)
-            if check_genre(239):
-                download_txt(f"https://tululu.org/txt.php?id={id}", title_author_parser(id))
-                download_img(f'https://tululu.org/b{id}')
-                read_comments(f'https://tululu.org/b{id}')
+            parse_book_page(id)
+            #check_genre(id)
+            #download_txt(f"https://tululu.org/txt.php?id={id}", title_author_parser(id))
+            #download_img(f'https://tululu.org/b{id}')
+            #read_comments(f'https://tululu.org/b{id}')
         except:
             pass
 

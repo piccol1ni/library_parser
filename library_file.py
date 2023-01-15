@@ -5,18 +5,31 @@ from bs4 import BeautifulSoup
 import lxml
 from pathvalidate import sanitize_filename
 
-def check_for_redirect(response):
+def check_for_redirect(id):
+    """
+    Check if url for request can be downloaded and not redirect on main page
+    """
+    response = requests.get(f"https://tululu.org/txt.php?id={id}")
+    response.raise_for_status()
     if response.history != []:
         raise requests.HTTPError('ERROR!!!!')
+    return True
 
 def check_genre(id):
+    """
+    Check if 'Научная фантастика' in geners!
+    """
     response = requests.get(f'https://tululu.org/b{id}')
     soup = BeautifulSoup(response.text, 'lxml')
     genres = soup.find('span', class_='d_book').text.split(':')
     genres = genres[1].strip().split(',')
-    return genres
+    if 'Научная фантастика' in genres:
+        return True
 
 def download_txt(url, filename, folder='books/'):
+    """
+    Download books texts
+    """
     response = requests.get(url)
     response.raise_for_status()
     os.makedirs(folder, exist_ok=True)
@@ -26,6 +39,9 @@ def download_txt(url, filename, folder='books/'):
     return os.path.join(folder, filename)
 
 def download_img(url, folder='images/'):
+    """
+    Download books images
+    """
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'lxml')
     response = requests.get(f"https://tululu.org{soup.find(class_='bookimage').find('img')['src']}")
@@ -36,6 +52,9 @@ def download_img(url, folder='images/'):
     return os.path.join(folder, image_name)
 
 def read_comments(url):
+    """
+    Download all comments for each book
+    """
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'lxml')
     title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
@@ -45,7 +64,10 @@ def read_comments(url):
         print(comment.find(class_='black').text)
 
 
-def title_author_parser(id):
+def title_parser(id):
+    """
+    Parse title for each book
+    """
     response = requests.get(f'https://tululu.org/b{id}/')
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
@@ -54,16 +76,21 @@ def title_author_parser(id):
     return f'{id}. {book_title}'
 
 def parse_book_page(id):
+    """
+    Parse whole info about book
+    """
     response = requests.get(f'https://tululu.org/b{id}')
     soup = BeautifulSoup(response.text, 'lxml')
     title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
     book_title = title_and_author[0].strip()
     book_author = title_and_author[1].strip()
     image_name = soup.find(class_='bookimage').find('img')['src']
+    genres = soup.find('span', class_='d_book').text.split(':')
+    genres = genres[1].strip().split(',')
     book_info = {
         'title': book_title,
         'author': book_author,
-        'genres': check_genre(id),
+        'genres': genres,
         'image': f"https://tululu.org{image_name}",
     }
     print(book_info)
@@ -75,13 +102,10 @@ def main():
     parser.add_argument('end', help='До какой книги будете искать?')
     args = parser.parse_args()
     for id in range(int(args.start), int(args.end)):
-        response = requests.get(f"https://tululu.org/txt.php?id={id}")
-        response.raise_for_status()
         try:
-            check_for_redirect(response)
-            if check_genre(id):
+            if check_for_redirect(id) and check_genre(id):
                 parse_book_page(id)
-                download_txt(f"https://tululu.org/txt.php?id={id}", title_author_parser(id))
+                download_txt(f"https://tululu.org/txt.php?id={id}", title_parser(id))
                 download_img(f'https://tululu.org/b{id}')
                 read_comments(f'https://tululu.org/b{id}')
         except:

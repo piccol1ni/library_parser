@@ -1,5 +1,6 @@
 import os
 import requests
+import argparse
 from bs4 import BeautifulSoup
 import lxml
 from pathvalidate import sanitize_filename
@@ -72,16 +73,20 @@ def parse_book_page(id):
 
 
 def main():
-    for id in range(1, 11):
+    parser = argparse.ArgumentParser(description='Напишите id книг по которым вы будете искать информацию! И скачивать их.')
+    parser.add_argument('start', help='С какой книги будете искать?')
+    parser.add_argument('end', help='До какой книги будете искать?')
+    args = parser.parse_args()
+    for id in range(int(args.start), int(args.end)):
         response = requests.get(f"https://tululu.org/txt.php?id={id}")
         response.raise_for_status()
         try:
             check_for_redirect(response)
-            parse_book_page(id)
-            #check_genre(id)
-            #download_txt(f"https://tululu.org/txt.php?id={id}", title_author_parser(id))
-            #download_img(f'https://tululu.org/b{id}')
-            #read_comments(f'https://tululu.org/b{id}')
+            if check_genre(id):
+                parse_book_page(id)
+                download_txt(f"https://tululu.org/txt.php?id={id}", title_author_parser(id))
+                download_img(f'https://tululu.org/b{id}')
+                read_comments(f'https://tululu.org/b{id}')
         except:
             pass
 

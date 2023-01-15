@@ -41,11 +41,8 @@ def read_comments(url):
     title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
     book_title = title_and_author[0].strip()
     print(book_title)
-    print()
-    print()
     for comment in soup.find_all(class_='texts'):
         print(comment.find(class_='black').text)
-        print()
 
 
 def title_author_parser(id):

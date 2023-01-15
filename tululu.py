@@ -16,6 +16,10 @@ def main():
         try:
             print(f"Заголовок: {library_file.title_author_parser(id)}\nhttps://tululu.org{soup.find(class_='bookimage').find('img')['src']}")
             print()
+
+            for comment in soup.find_all(class_='texts'):
+                print(comment.find(class_='black').text)
+            print()
         except:
             pass
 

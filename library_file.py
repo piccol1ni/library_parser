@@ -1,99 +1,97 @@
 import os
 import requests
 import argparse
+from tqdm import tqdm
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 import lxml
+from time import sleep
 from pathvalidate import sanitize_filename
 
-def check_for_redirect(id):
+def defeat_cpu(book_number, ex):
+    internet_status = False
+    while not internet_status:
+        response = requests.get(f'https://tululu.org/b{book_number}')
+        try:
+            response.raise_for_status()
+            internet_status = True
+        except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+            print(ex)
+            sleep(10)
+
+
+def check_for_redirect(response):
     """
     Check if url for request can be downloaded and not redirect on main page
     """
-    response = requests.get(f"https://tululu.org/txt.php?id={id}")
-    response.raise_for_status()
-    if response.history != []:
-        raise requests.HTTPError('ERROR!!!!')
-    return True
+    if response.history:
+        raise requests.exceptions.HTTPError('Not a book page!')
 
-def check_genre(id):
+
+def check_genre(response):
     """
     Check if 'Научная фантастика' in geners!
     """
-    response = requests.get(f'https://tululu.org/b{id}')
     soup = BeautifulSoup(response.text, 'lxml')
     genres = soup.find('span', class_='d_book').text.split(':')
     genres = genres[1].strip().split(',')
-    if 'Научная фантастика' in genres:
-        return True
+    if 'Научная фантастика' not in genres:
+        raise requests.exceptions.HTTPError('Not a valid genre!')
 
-def download_txt(url, filename, folder='books/'):
+
+def download_txt(response, filename, folder='books/'):
     """
     Download books texts
     """
-    response = requests.get(url)
-    response.raise_for_status()
     os.makedirs(folder, exist_ok=True)
     filename = sanitize_filename(filename)
-    with open(f'{folder}{filename}', 'wb') as file:
+    file_path = os.path.join(folder, filename)
+    with open(file_path, 'wb') as file:
         file.write(response.content)
-    return os.path.join(folder, filename)
+    return file_path
 
-def download_img(url, folder='images/'):
+
+def download_img(response, folder='images/'):
     """
     Download books images
     """
-    response = requests.get(url)
     soup = BeautifulSoup(response.text, 'lxml')
     response = requests.get(f"https://tululu.org{soup.find(class_='bookimage').find('img')['src']}")
+    response.raise_for_status()
     os.makedirs(folder, exist_ok=True)
     image_name = sanitize_filename(soup.find(class_='bookimage').find('img')['src'])
-    with open(f"{folder}{image_name}", 'wb') as file:
+    file_path = os.path.join(folder, image_name)
+    with open(file_path, 'wb') as file:
         file.write(response.content)
-    return os.path.join(folder, image_name)
+    return file_path
 
-def read_comments(url):
+
+def read_comments(response):
     """
     Download all comments for each book
     """
-    response = requests.get(url)
     soup = BeautifulSoup(response.text, 'lxml')
-    title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
-    book_title = title_and_author[0].strip()
-    print(book_title)
     for comment in soup.find_all(class_='texts'):
         print(comment.find(class_='black').text)
 
 
-def title_parser(id):
-    """
-    Parse title for each book
-    """
-    response = requests.get(f'https://tululu.org/b{id}/')
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'lxml')
-    title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
-    book_title = title_and_author[0].strip()
-    return f'{id}. {book_title}'
-
-def parse_book_page(id):
+def parse_book_page(response, book_number = 0):
     """
     Parse whole info about book
     """
-    response = requests.get(f'https://tululu.org/b{id}')
     soup = BeautifulSoup(response.text, 'lxml')
     title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
-    book_title = title_and_author[0].strip()
-    book_author = title_and_author[1].strip()
-    image_name = soup.find(class_='bookimage').find('img')['src']
+    book_title, book_author = [*title_and_author]
+    image_address = soup.find(class_='bookimage').find('img')['src']
     genres = soup.find('span', class_='d_book').text.split(':')
     genres = genres[1].strip().split(',')
-    book_info = {
-        'title': book_title,
-        'author': book_author,
+    one_book_information = {
+        'title': f"{book_number}. {book_title.strip()}",
+        'author': book_author.strip(),
         'genres': genres,
-        'image': f"https://tululu.org{image_name}",
+        'image': urljoin('https://tululu.org', image_address),
     }
-    print(book_info)
+    return one_book_information['title']
 
 
 def main():
@@ -101,15 +99,26 @@ def main():
     parser.add_argument('start', help='С какой книги будете искать?')
     parser.add_argument('end', help='До какой книги будете искать?')
     args = parser.parse_args()
-    for id in range(int(args.start), int(args.end)):
+    for book_number in tqdm(range(int(args.start), int(args.end))):
+        params_text_page = {
+            'txt.php': '',
+            'id': book_number,
+        }
         try:
-            if check_for_redirect(id) and check_genre(id):
-                parse_book_page(id)
-                download_txt(f"https://tululu.org/txt.php?id={id}", title_parser(id))
-                download_img(f'https://tululu.org/b{id}')
-                read_comments(f'https://tululu.org/b{id}')
-        except:
-            pass
+            response_book_page = requests.get(f"https://tululu.org/b{book_number}")
+            response_text_page = requests.get(f"https://tululu.org/", params=params_text_page)
+        except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
+            defeat_cpu(book_number, ex)
+
+        try:
+            check_for_redirect(response_text_page)
+            check_genre(response_book_page)
+        except(requests.exceptions.HTTPError):
+            continue
+        parse_book_page(response_book_page)
+        download_txt(response_text_page, parse_book_page(response_book_page, book_number))
+        download_img(response_book_page)
+        read_comments(response_book_page)
 
 
 if __name__=='__main__':

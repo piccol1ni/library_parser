@@ -100,13 +100,13 @@ def main():
     parser.add_argument('end', help='До какой книги будете искать?')
     args = parser.parse_args()
     for book_number in tqdm(range(int(args.start), int(args.end))):
-        params_text_page = {
+        text_page_params = {
             'txt.php': '',
             'id': book_number,
         }
         try:
             response_book_page = requests.get(f"https://tululu.org/b{book_number}")
-            response_text_page = requests.get(f"https://tululu.org/", params=params_text_page)
+            response_text_page = requests.get(f"https://tululu.org/", params=text_page_params)
         except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
             defeat_cpu(book_number, ex)
 

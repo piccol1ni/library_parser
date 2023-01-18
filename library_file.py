@@ -104,9 +104,14 @@ def main():
             check_genre(response_book_page)
         except(requests.exceptions.HTTPError):
             continue
+
         parse_book_page(response_book_page)
-        download_txt(response_text_page, parse_book_page(response_book_page, book_number)['title'])
-        download_img(response_book_page)
+
+        try:
+            download_txt(response_text_page, parse_book_page(response_book_page, book_number)['title'])
+            download_img(response_book_page)
+        except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
+            defeat_cpu(book_number, ex)
 
 
 if __name__=='__main__':

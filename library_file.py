@@ -85,13 +85,13 @@ def parse_book_page(response, book_number = 0):
     image_address = soup.find(class_='bookimage').find('img')['src']
     genres = soup.find('span', class_='d_book').text.split(':')
     genres = genres[1].strip().split(',')
-    one_book_information = {
+    book = {
         'title': f"{book_number}. {book_title.strip()}",
         'author': book_author.strip(),
         'genres': genres,
         'image': urljoin('https://tululu.org', image_address),
     }
-    return one_book_information['title']
+    return book['title']
 
 
 def main():

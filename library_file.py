@@ -89,8 +89,9 @@ def parse_book_page(response, book_number = 0):
         'title': f"{book_number}. {book_title.strip()}",
         'author': book_author.strip(),
         'genres': genres,
-        'image': urljoin('https://tululu.org', image_address),
+        'image': urljoin(f"https://tululu.org/b{book_number}", f"//{image_address}"),
     }
+    print(book)
     return book['title']
 
 

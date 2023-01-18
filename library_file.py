@@ -60,15 +60,6 @@ def download_img(response, folder='images/'):
     return file_path
 
 
-def read_comments(response):
-    """
-    Download all comments for each book
-    """
-    soup = BeautifulSoup(response.text, 'lxml')
-    for comment in soup.find_all(class_='texts'):
-        print(comment.find(class_='black').text)
-
-
 def parse_book_page(response, book_number = 0):
     """
     Parse whole info about book
@@ -79,11 +70,15 @@ def parse_book_page(response, book_number = 0):
     image_address = soup.find(class_='bookimage').find('img')['src']
     genres = soup.find('span', class_='d_book').text.split(':')
     genres = genres[1].strip().split(',')
+    comments = []
+    for comment in soup.find_all(class_='texts'):
+        comments.append(comment.find(class_='black').text)
     book = {
         'title': f"{book_number}. {book_title.strip()}",
         'author': book_author.strip(),
         'genres': genres,
         'image': urljoin(f"https://tululu.org/b{book_number}", f"//{image_address}"),
+        'comments': comments,
     }
     return book
 
@@ -112,7 +107,6 @@ def main():
         parse_book_page(response_book_page)
         download_txt(response_text_page, parse_book_page(response_book_page, book_number)['title'])
         download_img(response_book_page)
-        read_comments(response_book_page)
 
 
 if __name__=='__main__':

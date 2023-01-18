@@ -3,7 +3,7 @@ import requests
 import argparse
 from tqdm import tqdm
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import lxml
 from time import sleep
 from pathvalidate import sanitize_filename
@@ -32,10 +32,7 @@ def check_genre(response):
     """
     Check if 'Научная фантастика' in geners!
     """
-    soup = BeautifulSoup(response.text, 'lxml')
-    genres = soup.find('span', class_='d_book').text.split(':')
-    genres = genres[1].strip().split(',')
-    if 'Научная фантастика' not in genres:
+    if 'Научная фантастика' not in parse_book_page(response)['genres']:
         raise requests.exceptions.HTTPError('Not a valid genre!')
 
 
@@ -55,11 +52,8 @@ def download_img(response, folder='images/'):
     """
     Download books images
     """
-    soup = BeautifulSoup(response.text, 'lxml')
-    response = requests.get(f"https://tululu.org{soup.find(class_='bookimage').find('img')['src']}")
-    response.raise_for_status()
     os.makedirs(folder, exist_ok=True)
-    image_name = sanitize_filename(soup.find(class_='bookimage').find('img')['src'])
+    image_name = sanitize_filename(urlparse(parse_book_page(response)['image']).path)
     file_path = os.path.join(folder, image_name)
     with open(file_path, 'wb') as file:
         file.write(response.content)
@@ -91,8 +85,7 @@ def parse_book_page(response, book_number = 0):
         'genres': genres,
         'image': urljoin(f"https://tululu.org/b{book_number}", f"//{image_address}"),
     }
-    print(book)
-    return book['title']
+    return book
 
 
 def main():
@@ -117,7 +110,7 @@ def main():
         except(requests.exceptions.HTTPError):
             continue
         parse_book_page(response_book_page)
-        download_txt(response_text_page, parse_book_page(response_book_page, book_number))
+        download_txt(response_text_page, parse_book_page(response_book_page, book_number)['title'])
         download_img(response_book_page)
         read_comments(response_book_page)
 

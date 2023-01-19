@@ -8,17 +8,6 @@ import lxml
 from time import sleep
 from pathvalidate import sanitize_filename
 
-def defeat_cpu(book_number, ex):
-    internet_status = False
-    while not internet_status:
-        response = requests.get(f'https://tululu.org/b{book_number}')
-        try:
-            response.raise_for_status()
-            internet_status = True
-        except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
-            print(ex)
-            sleep(10)
-
 
 def check_for_redirect(response):
     """
@@ -28,11 +17,11 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError('Not a book page!')
 
 
-def check_genre(response):
+def check_genre():
     """
     Check if 'Научная фантастика' in geners!
     """
-    if 'Научная фантастика' not in parse_book_page(response)['genres']:
+    if 'Научная фантастика' not in book_page['genres']:
         raise requests.exceptions.HTTPError('Not a valid genre!')
 
 
@@ -48,12 +37,14 @@ def download_txt(response, filename, folder='books/'):
     return file_path
 
 
-def download_img(response, folder='images/'):
+def download_img(image_url, folder='images/'):
     """
     Download books images
     """
+    response = requests.get(image_url)
+    response.raise_for_status()
     os.makedirs(folder, exist_ok=True)
-    image_name = sanitize_filename(urlparse(parse_book_page(response)['image']).path)
+    image_name = sanitize_filename(urlparse(image_url).path)
     file_path = os.path.join(folder, image_name)
     with open(file_path, 'wb') as file:
         file.write(response.content)
@@ -70,9 +61,7 @@ def parse_book_page(response, book_number = 0):
     image_address = soup.find(class_='bookimage').find('img')['src']
     genres = soup.find('span', class_='d_book').text.split(':')
     genres = genres[1].strip().split(',')
-    comments = []
-    for comment in soup.find_all(class_='texts'):
-        comments.append(comment.find(class_='black').text)
+    comments = [comment.find(class_='black').text for comment in soup.find_all(class_='texts')]
     book = {
         'title': f"{book_number}. {book_title.strip()}",
         'author': book_author.strip(),
@@ -80,38 +69,32 @@ def parse_book_page(response, book_number = 0):
         'image': urljoin(f"https://tululu.org/b{book_number}", f"//{image_address}"),
         'comments': comments,
     }
+    print(book)
     return book
 
 
 def main():
+    global book_page
     parser = argparse.ArgumentParser(description='Напишите id книг по которым вы будете искать информацию! И скачивать их.')
     parser.add_argument('start', help='С какой книги будете искать?')
     parser.add_argument('end', help='До какой книги будете искать?')
     args = parser.parse_args()
     for book_number in tqdm(range(int(args.start), int(args.end))):
         text_page_params = {
-            'txt.php': '',
             'id': book_number,
         }
         try:
             response_book_page = requests.get(f"https://tululu.org/b{book_number}")
-            response_text_page = requests.get(f"https://tululu.org/", params=text_page_params)
-        except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
-            defeat_cpu(book_number, ex)
-
-        try:
+            response_book_page.raise_for_status()
+            response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
+            response_text_page.raise_for_status()
             check_for_redirect(response_text_page)
-            check_genre(response_book_page)
-        except(requests.exceptions.HTTPError):
-            continue
-
-        parse_book_page(response_book_page)
-
-        try:
-            download_txt(response_text_page, parse_book_page(response_book_page, book_number)['title'])
-            download_img(response_book_page)
+            book_page = parse_book_page(response_book_page, book_number)
+            check_genre()
+            download_txt(response_text_page, book_page['title'])
+            download_img(book_page['image'])
         except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
-            defeat_cpu(book_number, ex)
+            print(ex)
 
 
 if __name__=='__main__':

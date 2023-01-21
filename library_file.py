@@ -86,6 +86,7 @@ def main():
         try:
             response_book_page = requests.get(f"https://tululu.org/b{book_number}")
             response_book_page.raise_for_status()
+            check_for_redirect(response_book_page)
             response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
             response_text_page.raise_for_status()
             check_for_redirect(response_text_page)
@@ -94,6 +95,7 @@ def main():
             download_txt(response_text_page, book_page['title'])
             download_img(book_page['image'])
         except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
+            sleep(100)
             print(ex)
 
 

@@ -69,7 +69,6 @@ def parse_book_page(response, book_number = 0):
         'image': urljoin(f"https://tululu.org/b{book_number}", f"//{image_address}"),
         'comments': comments,
     }
-    print(book)
     return book
 
 

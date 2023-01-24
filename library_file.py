@@ -6,7 +6,9 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import lxml
 from time import sleep
+import urllib.parse
 from pathvalidate import sanitize_filename
+import json
 
 
 def check_for_redirect(response):
@@ -72,31 +74,50 @@ def parse_book_page(response, book_number = 0):
     return book
 
 
+def get_book_links(page_number):
+    response = requests.get('https://tululu.org/l55/'+ str(page_number))
+    response.raise_for_status()
+    check_for_redirect(response)
+    soup = BeautifulSoup(response.text, 'lxml')
+    book_links = []
+    for link in soup.find_all(class_='bookimage'):
+        book_links.append(link.find('a')['href'][2:-1])
+    page_number += 1
+    return book_links
+
+
 def main():
     global book_page
-    parser = argparse.ArgumentParser(description='Напишите id книг по которым вы будете искать информацию! И скачивать их.')
-    parser.add_argument('start', help='С какой книги будете искать?')
-    parser.add_argument('end', help='До какой книги будете искать?')
-    args = parser.parse_args()
-    for book_number in tqdm(range(int(args.start), int(args.end))):
+    global page_number
+    #parser = argparse.ArgumentParser(description='Напишите id книг по которым вы будете искать информацию! И скачивать их.')
+    #parser.add_argument('start', help='С какой книги будете искать?')
+    #parser.add_argument('end', help='До какой книги будете искать?')
+    #args = parser.parse_args()
+    if page_number == 5:
+        return 'STOP!'
+    for book_number in get_book_links(page_number):
         text_page_params = {
             'id': book_number,
         }
         try:
             response_book_page = requests.get(f"https://tululu.org/b{book_number}")
             response_book_page.raise_for_status()
-            check_for_redirect(response_book_page)
             response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
             response_text_page.raise_for_status()
-            check_for_redirect(response_text_page)
             book_page = parse_book_page(response_book_page, book_number)
-            check_genre()
+            all_books_information.append(book_page)
             download_txt(response_text_page, book_page['title'])
             download_img(book_page['image'])
         except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
-            sleep(100)
             print(ex)
+            sleep(100)
+    page_number+=1
+    main()
 
 
 if __name__=='__main__':
+    all_books_information = []
+    page_number = 1
     main()
+    with open('all_books_info.json', 'w') as file:
+        json.dump(all_books_information, file, indent=4, ensure_ascii=False)

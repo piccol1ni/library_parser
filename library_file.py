@@ -58,12 +58,17 @@ def parse_book_page(response, book_number = 0):
     Parse whole info about book
     """
     soup = BeautifulSoup(response.text, 'lxml')
+    selector_title_and_author = "td.ow_px_td h1"
     title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
     book_title, book_author = [*title_and_author]
-    image_address = soup.find(class_='bookimage').find('img')['src']
-    genres = soup.find('span', class_='d_book').text.split(':')
+    selector_image_adress = "div.bookimage img"
+    image_address = soup.select_one(selector_image_adress)['src']
+    selector_genres = "span.d_book"
+    genres = soup.select_one(selector_genres).text.split(':')
     genres = genres[1].strip().split(',')
-    comments = [comment.find(class_='black').text for comment in soup.find_all(class_='texts')]
+    selector_comment = "span.black"
+    selector_comments = "div.texts"
+    comments = [comment.select_one(selector_comment).text for comment in soup.select(selector_comments)]
     book = {
         'title': f"{book_number}. {book_title.strip()}",
         'author': book_author.strip(),
@@ -79,9 +84,11 @@ def get_book_links(page_number):
     response.raise_for_status()
     check_for_redirect(response)
     soup = BeautifulSoup(response.text, 'lxml')
+    selector_links = "div.bookimage"
+    selector_number_of_link = "a"
     book_links = []
-    for link in soup.find_all(class_='bookimage'):
-        book_links.append(link.find('a')['href'][2:-1])
+    for link in soup.select(selector_links):
+        book_links.append(link.select_one(selector_number_of_link)['href'][2:-1])
     page_number += 1
     return book_links
 

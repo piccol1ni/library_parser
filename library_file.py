@@ -10,27 +10,31 @@ import urllib.parse
 from pathvalidate import sanitize_filename
 import json
 
+from custom_exceptions import NoTextError, NotValidHenre
+
 
 def check_for_redirect(response):
     """
     Check if url for request can be downloaded and not redirect on main page
     """
     if response.history:
-        raise requests.exceptions.HTTPError('Not a book page!')
+        raise NoTextError('Not a book page!')
 
 
-def check_genre():
+def check_genre(book_page):
     """
     Check if 'Научная фантастика' in geners!
     """
     if 'Научная фантастика' not in book_page['genres']:
-        raise requests.exceptions.HTTPError('Not a valid genre!')
+        raise NotValidHenre('Not a valid genre!')
 
 
 def download_txt(response, filename, folder='books/'):
     """
     Download books texts
     """
+    if args.skip_txt == 'True':
+        return None
     os.makedirs(folder, exist_ok=True)
     filename = sanitize_filename(filename)
     file_path = os.path.join(folder, filename)
@@ -43,6 +47,8 @@ def download_img(image_url, folder='images/'):
     """
     Download books images
     """
+    if args.skip_img == 'True':
+        return None
     response = requests.get(image_url)
     response.raise_for_status()
     os.makedirs(folder, exist_ok=True)
@@ -58,7 +64,6 @@ def parse_book_page(response, book_number = 0):
     Parse whole info about book
     """
     soup = BeautifulSoup(response.text, 'lxml')
-    selector_title_and_author = "td.ow_px_td h1"
     title_and_author = soup.find(class_='ow_px_td').find('h1').text.split('::')
     book_title, book_author = [*title_and_author]
     selector_image_adress = "div.bookimage img"
@@ -82,7 +87,6 @@ def parse_book_page(response, book_number = 0):
 def get_book_links(page_number):
     response = requests.get('https://tululu.org/l55/'+ str(page_number))
     response.raise_for_status()
-    check_for_redirect(response)
     soup = BeautifulSoup(response.text, 'lxml')
     selector_links = "div.bookimage"
     selector_number_of_link = "a"
@@ -93,14 +97,22 @@ def get_book_links(page_number):
     return book_links
 
 
-def main():
+def download_json_file():
+    if args.dest_folder:
+        with open(f'{args.dest_folder}/all_books_info.json', 'w') as file:
+            json.dump(all_books_information, file, indent=4, ensure_ascii=False)
+    else:
+        with open('all_books_info.json', 'w') as file:
+            json.dump(all_books_information, file, indent=4, ensure_ascii=False)
+    
+    if args.json_path:
+        with open(f'{args.json_path}/all_books_info.json', 'w') as file:
+            json.dump(all_books_information, file, indent=4, ensure_ascii=False)
+
+def download_books():
     global book_page
     global page_number
-    #parser = argparse.ArgumentParser(description='Напишите id книг по которым вы будете искать информацию! И скачивать их.')
-    #parser.add_argument('start', help='С какой книги будете искать?')
-    #parser.add_argument('end', help='До какой книги будете искать?')
-    #args = parser.parse_args()
-    if page_number == 5:
+    if page_number == int(args.end) + 1:
         return 'STOP!'
     for book_number in get_book_links(page_number):
         text_page_params = {
@@ -111,20 +123,34 @@ def main():
             response_book_page.raise_for_status()
             response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
             response_text_page.raise_for_status()
+            check_for_redirect(response_text_page)
             book_page = parse_book_page(response_book_page, book_number)
             all_books_information.append(book_page)
-            download_txt(response_text_page, book_page['title'])
-            download_img(book_page['image'])
+            if args.dest_folder:
+                download_txt(response_text_page, book_page['title'], f'{args.dest_folder}/books')
+                download_img(book_page['image'], f'{args.dest_folder}/images')
+            else:
+                download_txt(response_text_page, book_page['title'])
+                download_img(book_page['image'])
         except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
             print(ex)
             sleep(100)
+        except(NoTextError, NotValidHenre) as ex:
+            print(ex)
     page_number+=1
-    main()
+    download_books()
 
 
 if __name__=='__main__':
+    parser = argparse.ArgumentParser(description='Напишите страницы книг, с которых вы хотите скачивать книги')
+    parser.add_argument('start', help='С какой странички будете качать?')
+    parser.add_argument('end', help='До какой странички будете качать?')
+    parser.add_argument('--dest_folder', help='Укажите путь к каталогу с результатами парсинга картинок, книг, json')
+    parser.add_argument('--skip_img', help='Не скачивать картинки, пример True, default=False', default='False')
+    parser.add_argument('--skip_txt', help='Не скачивать книги, пример True, default=False', default='False')
+    parser.add_argument('--json_path', help='Указать свой путь к json')
+    args = parser.parse_args()
     all_books_information = []
-    page_number = 1
-    main()
-    with open('all_books_info.json', 'w') as file:
-        json.dump(all_books_information, file, indent=4, ensure_ascii=False)
+    page_number = int(args.start)
+    download_books()
+    download_json_file()

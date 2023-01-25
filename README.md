@@ -23,7 +23,7 @@ python3 library_file.py 1 11
 
 При запуске программы нужно указать обязательно 2 аргумента, они обозначают начальную и конечную стьраничку, с которой программа будет скачивать книги.
 
-## --dest_folder, --skip_img, --skip_txt', --json_path
+## --dest_folder, --skip_img, --skip_txt, --json_path
 Опционные аргументы, которые нужно явно указывать как в примере :
 ```
 python3 library_file.py 1 11 --dest_folder home/test --skip_img True --skip_txt True --json_path home/test/json_files

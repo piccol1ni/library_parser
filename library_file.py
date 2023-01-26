@@ -86,7 +86,7 @@ def parse_book_page(response, book_number = 0):
 
 def get_book_links(page_number):
     response = requests.get(f'https://tululu.org/l55/{str(page_number)}')
-    response.raise_for_status()
+    check_for_redirect(response)
     soup = BeautifulSoup(response.text, 'lxml')
     selector_links = "div.bookimage"
     selector_number_of_link = "a"
@@ -110,7 +110,7 @@ def download_json_file(folder_with_all_books, folder_with_json_file):
             json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
 
 def download_books(page_number):
-    if page_number == int(args.end) + 1:
+    if page_number == args.end + 1:
         return 'STOP!'
     for book_number in get_book_links(page_number):
         text_page_params = {

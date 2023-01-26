@@ -113,31 +113,31 @@ def download_json_file(folder_with_all_books, folder_with_json_file):
         with open(f'{folder_with_json_file}/all_books_info.json', 'w') as file:
             json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
 
-def download_books(page_number):
-    if page_number == args.end + 1:
-        return 'STOP!'
-    for book_number in get_book_links(page_number):
-        text_page_params = {
-            'id': book_number,
-        }
-        try:
-            response_book_page = requests.get(f"https://tululu.org/b{book_number}")
-            response_book_page.raise_for_status()
-            response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
-            check_for_redirect(response_text_page)
-            book_page = parse_book_page(response_book_page, book_number)
-            all_parsed_books.append(book_page)
-            if not args.skip_txt:
-                download_txt(response_text_page, book_page['title'], f'{args.dest_folder}books')
-            if not args.skip_img:
-                download_img(book_page['image'], f'{args.dest_folder}images')
-        except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
-            print(ex)
-            sleep(100)
-        except(NoTextError, NotValidHenre) as ex:
-            print(ex)
-    page_number+=1
-    download_books(page_number)
+def download_books(page_start_number, page_end_number):
+    for page_number in range(page_start_number, page_end_number + 1):
+        if page_number == page_end_number + 2:
+            return 'STOP!'
+        for book_number in get_book_links(page_number):
+            text_page_params = {
+                'id': book_number,
+            }
+            try:
+                response_book_page = requests.get(f"https://tululu.org/b{book_number}")
+                response_book_page.raise_for_status()
+                response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
+                check_for_redirect(response_text_page)
+                book_page = parse_book_page(response_book_page, book_number)
+                all_parsed_books.append(book_page)
+                if not args.skip_txt:
+                    download_txt(response_text_page, book_page['title'], f'{args.dest_folder}books')
+                if not args.skip_img:
+                    download_img(book_page['image'], f'{args.dest_folder}images')
+            except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
+                print(ex)
+                sleep(100)
+            except(NoTextError, NotValidHenre) as ex:
+                print(ex)
+        page_number+=1
 
 
 if __name__=='__main__':
@@ -151,10 +151,11 @@ if __name__=='__main__':
     args = parser.parse_args()
     all_parsed_books = []
     page_start_number = args.start
+    page_end_number = args.end
     page_number = copy.copy(page_start_number)
     folder_with_all_books = args.dest_folder
     folder_with_json_file = args.json_path
     check_for_correct_path(folder_with_all_books)
     check_for_correct_path(folder_with_json_file)
-    download_books(page_number)
+    download_books(page_start_number, page_end_number)
     download_json_file(folder_with_all_books, folder_with_json_file)

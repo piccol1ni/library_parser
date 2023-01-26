@@ -41,8 +41,6 @@ def download_txt(response, filename, folder='books/'):
     """
     Download books texts
     """
-    if args.skip_txt:
-        return None
     os.makedirs(folder, exist_ok=True)
     filename = sanitize_filename(filename)
     file_path = os.path.join(folder, filename)
@@ -55,8 +53,6 @@ def download_img(image_url, folder='images/'):
     """
     Download books images
     """
-    if args.skip_img:
-        return None
     response = requests.get(image_url)
     response.raise_for_status()
     os.makedirs(folder, exist_ok=True)
@@ -131,8 +127,10 @@ def download_books(page_number):
             check_for_redirect(response_text_page)
             book_page = parse_book_page(response_book_page, book_number)
             all_parsed_books.append(book_page)
-            download_txt(response_text_page, book_page['title'], f'{args.dest_folder}books')
-            download_img(book_page['image'], f'{args.dest_folder}images')
+            if not args.skip_txt:
+                download_txt(response_text_page, book_page['title'], f'{args.dest_folder}books')
+            if not args.skip_img:
+                download_img(book_page['image'], f'{args.dest_folder}images')
         except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
             print(ex)
             sleep(100)

@@ -85,7 +85,7 @@ def parse_book_page(response, book_number = 0):
 
 
 def get_book_links(page_number):
-    response = requests.get('https://tululu.org/l55/'+ str(page_number))
+    response = requests.get(f'https://tululu.org/l55/{str(page_number)}')
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
     selector_links = "div.bookimage"
@@ -97,22 +97,20 @@ def get_book_links(page_number):
     return book_links
 
 
-def download_json_file():
-    if args.dest_folder:
-        with open(f'{args.dest_folder}/all_books_info.json', 'w') as file:
+def download_json_file(folder_with_all_books, folder_with_json_file):
+    if folder_with_all_books:
+        with open(f'{folder_with_all_books}/all_books_info.json', 'w') as file:
             json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
     else:
         with open('all_books_info.json', 'w') as file:
             json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
     
-    if args.json_path:
-        with open(f'{args.json_path}/all_books_info.json', 'w') as file:
+    if folder_with_json_file:
+        with open(f'{folder_with_json_file}/all_books_info.json', 'w') as file:
             json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
 
-def download_books():
-    global book_page
-    global page_number
-    if page_number == args.end + 1:
+def download_books(page_number):
+    if page_number == int(args.end) + 1:
         return 'STOP!'
     for book_number in get_book_links(page_number):
         text_page_params = {
@@ -138,7 +136,7 @@ def download_books():
         except(NoTextError, NotValidHenre) as ex:
             print(ex)
     page_number+=1
-    download_books()
+    download_books(page_number)
 
 
 if __name__=='__main__':
@@ -152,4 +150,7 @@ if __name__=='__main__':
     args = parser.parse_args()
     all_parsed_books = []
     page_number = args.start
-    download_json_file()
+    folder_with_all_books = args.dest_folder
+    folder_with_json_file = args.json_path
+    download_books(page_number)
+    download_json_file(folder_with_all_books, folder_with_json_file)

@@ -9,6 +9,7 @@ from time import sleep
 import urllib.parse
 from pathvalidate import sanitize_filename
 import json
+import copy
 
 from custom_exceptions import NoTextError, NotValidHenre
 
@@ -120,7 +121,6 @@ def download_books(page_number):
             response_book_page = requests.get(f"https://tululu.org/b{book_number}")
             response_book_page.raise_for_status()
             response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
-            response_text_page.raise_for_status()
             check_for_redirect(response_text_page)
             book_page = parse_book_page(response_book_page, book_number)
             all_parsed_books.append(book_page)
@@ -149,7 +149,8 @@ if __name__=='__main__':
     parser.add_argument('--json_path', help='Указать свой путь к json')
     args = parser.parse_args()
     all_parsed_books = []
-    page_number = args.start
+    page_start_number = args.start
+    page_number = copy.copy(page_start_number)
     folder_with_all_books = args.dest_folder
     folder_with_json_file = args.json_path
     download_books(page_number)

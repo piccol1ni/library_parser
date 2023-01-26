@@ -33,7 +33,7 @@ def download_txt(response, filename, folder='books/'):
     """
     Download books texts
     """
-    if args.skip_txt == 'True':
+    if args.skip_txt:
         return None
     os.makedirs(folder, exist_ok=True)
     filename = sanitize_filename(filename)
@@ -47,7 +47,7 @@ def download_img(image_url, folder='images/'):
     """
     Download books images
     """
-    if args.skip_img == 'True':
+    if args.skip_img:
         return None
     response = requests.get(image_url)
     response.raise_for_status()
@@ -100,14 +100,14 @@ def get_book_links(page_number):
 def download_json_file():
     if args.dest_folder:
         with open(f'{args.dest_folder}/all_books_info.json', 'w') as file:
-            json.dump(all_books_information, file, indent=4, ensure_ascii=False)
+            json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
     else:
         with open('all_books_info.json', 'w') as file:
-            json.dump(all_books_information, file, indent=4, ensure_ascii=False)
+            json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
     
     if args.json_path:
         with open(f'{args.json_path}/all_books_info.json', 'w') as file:
-            json.dump(all_books_information, file, indent=4, ensure_ascii=False)
+            json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
 
 def download_books():
     global book_page
@@ -125,7 +125,7 @@ def download_books():
             response_text_page.raise_for_status()
             check_for_redirect(response_text_page)
             book_page = parse_book_page(response_book_page, book_number)
-            all_books_information.append(book_page)
+            all_parsed_books.append(book_page)
             if args.dest_folder:
                 download_txt(response_text_page, book_page['title'], f'{args.dest_folder}/books')
                 download_img(book_page['image'], f'{args.dest_folder}/images')
@@ -146,11 +146,11 @@ if __name__=='__main__':
     parser.add_argument('start', help='С какой странички будете качать?')
     parser.add_argument('end', help='До какой странички будете качать?')
     parser.add_argument('--dest_folder', help='Укажите путь к каталогу с результатами парсинга картинок, книг, json')
-    parser.add_argument('--skip_img', help='Не скачивать картинки, пример True, default=False', default='False')
-    parser.add_argument('--skip_txt', help='Не скачивать книги, пример True, default=False', default='False')
+    parser.add_argument('--skip_img', help='Не скачивать картинки, пример True, default=False', action='store_true')
+    parser.add_argument('--skip_txt', help='Не скачивать книги, пример True, default=False', action='store_true')
     parser.add_argument('--json_path', help='Указать свой путь к json')
     args = parser.parse_args()
-    all_books_information = []
+    all_parsed_books = []
     page_number = int(args.start)
     download_books()
     download_json_file()

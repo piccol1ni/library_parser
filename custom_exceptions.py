@@ -3,3 +3,6 @@ class NoTextError(Exception):
 
 class NotValidHenre(Exception):
     pass
+
+class NotValidPath(Exception):
+    pass

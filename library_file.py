@@ -11,7 +11,7 @@ from pathvalidate import sanitize_filename
 import json
 import copy
 
-from custom_exceptions import NoTextError, NotValidHenre
+from custom_exceptions import NoTextError, NotValidHenre, NotValidPath
 
 
 def check_for_redirect(response):
@@ -28,6 +28,13 @@ def check_genre(book_page):
     """
     if 'Научная фантастика' not in book_page['genres']:
         raise NotValidHenre('Not a valid genre!')
+
+def check_for_correct_path(path):
+    try:
+        if path[-1] != '/':
+            raise NotValidPath
+    except IndexError:
+        pass
 
 
 def download_txt(response, filename, folder='books/'):
@@ -124,12 +131,8 @@ def download_books(page_number):
             check_for_redirect(response_text_page)
             book_page = parse_book_page(response_book_page, book_number)
             all_parsed_books.append(book_page)
-            if args.dest_folder:
-                download_txt(response_text_page, book_page['title'], f'{args.dest_folder}/books')
-                download_img(book_page['image'], f'{args.dest_folder}/images')
-            else:
-                download_txt(response_text_page, book_page['title'])
-                download_img(book_page['image'])
+            download_txt(response_text_page, book_page['title'], f'{args.dest_folder}books')
+            download_img(book_page['image'], f'{args.dest_folder}images')
         except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
             print(ex)
             sleep(100)
@@ -143,15 +146,17 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Напишите страницы книг, с которых вы хотите скачивать книги')
     parser.add_argument('start', help='С какой странички будете качать?', type=int)
     parser.add_argument('end', help='До какой странички будете качать?', type=int)
-    parser.add_argument('--dest_folder', help='Укажите путь к каталогу с результатами парсинга картинок, книг, json')
+    parser.add_argument('--dest_folder', help='Укажите путь к каталогу с результатами парсинга картинок, книг, json', default='')
     parser.add_argument('--skip_img', help='Не скачивать картинки, пример True, default=False', action='store_true')
     parser.add_argument('--skip_txt', help='Не скачивать книги, пример True, default=False', action='store_true')
-    parser.add_argument('--json_path', help='Указать свой путь к json')
+    parser.add_argument('--json_path', help='Указать свой путь к json', default='')
     args = parser.parse_args()
     all_parsed_books = []
     page_start_number = args.start
     page_number = copy.copy(page_start_number)
     folder_with_all_books = args.dest_folder
     folder_with_json_file = args.json_path
+    check_for_correct_path(folder_with_all_books)
+    check_for_correct_path(folder_with_json_file)
     download_books(page_number)
     download_json_file(folder_with_all_books, folder_with_json_file)

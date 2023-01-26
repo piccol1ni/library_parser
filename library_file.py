@@ -112,7 +112,7 @@ def download_json_file():
 def download_books():
     global book_page
     global page_number
-    if page_number == int(args.end) + 1:
+    if page_number == args.end + 1:
         return 'STOP!'
     for book_number in get_book_links(page_number):
         text_page_params = {
@@ -143,14 +143,13 @@ def download_books():
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Напишите страницы книг, с которых вы хотите скачивать книги')
-    parser.add_argument('start', help='С какой странички будете качать?')
-    parser.add_argument('end', help='До какой странички будете качать?')
+    parser.add_argument('start', help='С какой странички будете качать?', type=int)
+    parser.add_argument('end', help='До какой странички будете качать?', type=int)
     parser.add_argument('--dest_folder', help='Укажите путь к каталогу с результатами парсинга картинок, книг, json')
     parser.add_argument('--skip_img', help='Не скачивать картинки, пример True, default=False', action='store_true')
     parser.add_argument('--skip_txt', help='Не скачивать книги, пример True, default=False', action='store_true')
     parser.add_argument('--json_path', help='Указать свой путь к json')
     args = parser.parse_args()
     all_parsed_books = []
-    page_number = int(args.start)
-    download_books()
+    page_number = args.start
     download_json_file()

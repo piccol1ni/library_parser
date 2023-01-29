@@ -22,21 +22,6 @@ def check_for_redirect(response):
         raise NoTextError('Not a book page!')
 
 
-def check_genre(book_page):
-    """
-    Check if 'Научная фантастика' in geners!
-    """
-    if 'Научная фантастика' not in book_page['genres']:
-        raise NotValidHenre('Not a valid genre!')
-
-def check_for_correct_path(path):
-    try:
-        if path[-1] != '/':
-            raise NotValidPath
-    except IndexError:
-        pass
-
-
 def download_txt(response, filename, folder='books/'):
     """
     Download books texts

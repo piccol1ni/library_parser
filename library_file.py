@@ -90,6 +90,7 @@ def parse_book_page(response, book_number = 0):
 
 def get_book_links(page_number):
     response = requests.get(f'https://tululu.org/l55/{str(page_number)}')
+    response.raise_for_status()
     check_for_redirect(response)
     soup = BeautifulSoup(response.text, 'lxml')
     selector_links = "div.bookimage"
@@ -123,6 +124,7 @@ def download_books(page_start_number, page_end_number):
                 response_book_page = requests.get(f"https://tululu.org/b{book_number}")
                 response_book_page.raise_for_status()
                 response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
+                response_text_page.raise_for_status()
                 check_for_redirect(response_text_page)
                 book_page = parse_book_page(response_book_page, book_number)
                 all_parsed_books.append(book_page)

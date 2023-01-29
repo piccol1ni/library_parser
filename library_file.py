@@ -132,9 +132,6 @@ def download_books(page_start_number, page_end_number):
                         download_txt(response_text_page, book_page['title'], f'{args.dest_folder}books')
                     if not args.skip_img:
                         download_img(book_page['image'], f'{args.dest_folder}images')
-                except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
-                    print(ex)
-                    sleep(100)
                 except(NoTextError, NotValidHenre) as ex:
                     print(ex)
         except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:

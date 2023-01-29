@@ -98,7 +98,6 @@ def get_book_links(page_number):
     book_links = []
     for link in soup.select(selector_links):
         book_links.append(link.select_one(selector_number_of_link)['href'][2:-1])
-    page_number += 1
     return book_links
 
 

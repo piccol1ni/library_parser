@@ -103,14 +103,11 @@ def get_book_links(page_number):
 
 def download_json_file(folder_with_all_books, folder_with_json_file):
     if folder_with_all_books:
-        with open(f'{folder_with_all_books}/all_books_info.json', 'w') as file:
-            json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
-    else:
-        with open('all_books_info.json', 'w') as file:
+        with open(f'{folder_with_all_books}all_books_info.json', 'w') as file:
             json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
     
     if folder_with_json_file:
-        with open(f'{folder_with_json_file}/all_books_info.json', 'w') as file:
+        with open(f'{folder_with_json_file}all_books_info.json', 'w') as file:
             json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
 
 def download_books(page_start_number, page_end_number):
@@ -144,10 +141,10 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Напишите страницы книг, с которых вы хотите скачивать книги')
     parser.add_argument('start', help='С какой странички будете качать?', type=int, default=1)
     parser.add_argument('end', help='До какой странички будете качать?', type=int, default=10)
-    parser.add_argument('--dest_folder', help='Укажите путь к каталогу с результатами парсинга картинок, книг, json', default='')
+    parser.add_argument('--dest_folder', help='Укажите путь к каталогу с результатами парсинга картинок, книг, json, поставив в конце "/"', default='')
     parser.add_argument('--skip_img', help='Не скачивать картинки, пример True, default=False', action='store_true')
     parser.add_argument('--skip_txt', help='Не скачивать книги, пример True, default=False', action='store_true')
-    parser.add_argument('--json_path', help='Указать свой путь к json', default='')
+    parser.add_argument('--json_path', help='Указать свой путь к json, поставив в конце "/"', default='')
     args = parser.parse_args()
     all_parsed_books = []
     page_start_number = args.start

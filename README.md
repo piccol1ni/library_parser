@@ -24,7 +24,7 @@ python3 library_file.py
 ## --dest_folder, --skip_img, --skip_txt, --json_path
 Опционные аргументы, которые нужно явно указывать как в примере :
 ```
-python3 library_file.py 1 11 --dest_folder home/test --skip_img --skip_txt --json_path home/test/json_files
+python3 library_file.py 1 11 --dest_folder home/test/ --skip_img --skip_txt --json_path home/test/json_files/
 ```
 1. dest_folder - ваш кастомнгый путь к папке, где будут храниться скаченные книги, обложки и json файл! Если путь не указать, файлы сохранятся в папке откуда был запущен скрипт! (Обязательно в конце пути должна стоять `/`)
 2. skip_img - запустить скрипт без скачиввания обложек, работает только если указать, как в примере.

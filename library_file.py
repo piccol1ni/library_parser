@@ -115,27 +115,31 @@ def download_json_file(folder_with_all_books, folder_with_json_file):
 
 def download_books(page_start_number, page_end_number):
     for page_number in range(page_start_number, page_end_number + 1):
-        for book_number in get_book_links(page_number):
-            text_page_params = {
-                'id': book_number,
-            }
-            try:
-                response_book_page = requests.get(f"https://tululu.org/b{book_number}")
-                response_book_page.raise_for_status()
-                response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
-                response_text_page.raise_for_status()
-                check_for_redirect(response_text_page)
-                book_page = parse_book_page(response_book_page, book_number)
-                all_parsed_books.append(book_page)
-                if not args.skip_txt:
-                    download_txt(response_text_page, book_page['title'], f'{args.dest_folder}books')
-                if not args.skip_img:
-                    download_img(book_page['image'], f'{args.dest_folder}images')
-            except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
-                print(ex)
-                sleep(100)
-            except(NoTextError, NotValidHenre) as ex:
-                print(ex)
+        try:
+            for book_number in get_book_links(page_number):
+                text_page_params = {
+                    'id': book_number,
+                }
+                try:
+                    response_book_page = requests.get(f"https://tululu.org/b{book_number}")
+                    response_book_page.raise_for_status()
+                    response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
+                    response_text_page.raise_for_status()
+                    check_for_redirect(response_text_page)
+                    book_page = parse_book_page(response_book_page, book_number)
+                    all_parsed_books.append(book_page)
+                    if not args.skip_txt:
+                        download_txt(response_text_page, book_page['title'], f'{args.dest_folder}books')
+                    if not args.skip_img:
+                        download_img(book_page['image'], f'{args.dest_folder}images')
+                except(requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
+                    print(ex)
+                    sleep(100)
+                except(NoTextError, NotValidHenre) as ex:
+                    print(ex)
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
+            print(ex)
+            sleep(100)
 
 
 if __name__=='__main__':

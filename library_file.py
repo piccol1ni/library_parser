@@ -123,6 +123,7 @@ def download_books(page_start_number, page_end_number):
                 try:
                     response_book_page = requests.get(f"https://tululu.org/b{book_number}")
                     response_book_page.raise_for_status()
+                    check_for_redirect(response_book_page)
                     response_text_page = requests.get(f"https://tululu.org/txt.php", params=text_page_params)
                     response_text_page.raise_for_status()
                     check_for_redirect(response_text_page)

@@ -115,8 +115,6 @@ def download_json_file(folder_with_all_books, folder_with_json_file):
 
 def download_books(page_start_number, page_end_number):
     for page_number in range(page_start_number, page_end_number + 1):
-        if page_number == page_end_number + 2:
-            return 'STOP!'
         for book_number in get_book_links(page_number):
             text_page_params = {
                 'id': book_number,
@@ -137,7 +135,6 @@ def download_books(page_start_number, page_end_number):
                 sleep(100)
             except(NoTextError, NotValidHenre) as ex:
                 print(ex)
-        page_number+=1
 
 
 if __name__=='__main__':

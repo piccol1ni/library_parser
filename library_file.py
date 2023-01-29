@@ -21,6 +21,10 @@ def check_for_redirect(response):
     if response.history:
         raise NoTextError('Not a book page!')
 
+def check_for_correct_path(path):
+    if path[-1] != '/':
+        raise NotValidPath
+
 
 def download_txt(response, filename, folder='books/'):
     """
@@ -124,8 +128,8 @@ def download_books(page_start_number, page_end_number):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Напишите страницы книг, с которых вы хотите скачивать книги')
-    parser.add_argument('start', help='С какой странички будете качать?', type=int, default=1)
-    parser.add_argument('end', help='До какой странички будете качать?', type=int, default=10)
+    parser.add_argument('--start', help='С какой странички будете качать?', type=int, default=1)
+    parser.add_argument('--end', help='До какой странички будете качать?', type=int, default=10)
     parser.add_argument('--dest_folder', help='Укажите путь к каталогу с результатами парсинга картинок, книг, json, поставив в конце "/"', default='')
     parser.add_argument('--skip_img', help='Не скачивать картинки, пример True, default=False', action='store_true')
     parser.add_argument('--skip_txt', help='Не скачивать книги, пример True, default=False', action='store_true')

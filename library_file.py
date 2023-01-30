@@ -143,8 +143,7 @@ if __name__=='__main__':
     check_for_correct_path(folder_with_all_books)
     check_for_correct_path(folder_with_json_file)
     download_books(page_start_number, page_end_number)
-    if folder_with_all_books:
-        download_json_file(folder_with_all_books)
     if folder_with_json_file:
         download_json_file(folder_with_json_file)
-        
+    elif folder_with_all_books:
+        download_json_file(folder_with_all_books)

@@ -90,14 +90,10 @@ def get_book_links(page_number):
     return book_links
 
 
-def download_json_file(folder_with_all_books, folder_with_json_file):
-    if folder_with_all_books:
-        with open(f'{folder_with_all_books}all_books_info.json', 'w') as file:
-            json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
-    
-    if folder_with_json_file:
-        with open(f'{folder_with_json_file}all_books_info.json', 'w') as file:
-            json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
+def download_json_file(path_to_file):
+    with open(f'{path_to_file}all_books_info.json', 'w') as file:
+        json.dump(all_parsed_books, file, indent=4, ensure_ascii=False)
+
 
 def download_books(page_start_number, page_end_number):
     for page_number in range(page_start_number, page_end_number + 1):
@@ -119,6 +115,9 @@ def download_books(page_start_number, page_end_number):
                         download_txt(response_text_page, book_page['title'], f'{args.dest_folder}books')
                     if not args.skip_img:
                         download_img(book_page['image'], f'{args.dest_folder}images')
+                except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
+                    print(ex)
+                    sleep(100)
                 except(NoTextError, NotValidHenre) as ex:
                     print(ex)
         except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
@@ -144,4 +143,8 @@ if __name__=='__main__':
     check_for_correct_path(folder_with_all_books)
     check_for_correct_path(folder_with_json_file)
     download_books(page_start_number, page_end_number)
-    download_json_file(folder_with_all_books, folder_with_json_file)
+    if folder_with_all_books:
+        download_json_file(folder_with_all_books)
+    if folder_with_json_file:
+        download_json_file(folder_with_json_file)
+        
